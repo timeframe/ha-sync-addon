@@ -1,0 +1,29 @@
+{
+  "name": "Timeframe HA Sync",
+  "version": "1.0.0",
+  "slug": "timeframe_ha_sync",
+  "description": "Syncs Home Assistant entities to Timeframe cloud",
+  "url": "https://github.com/timeframe/ha-sync-addon",
+  "arch": [
+    "aarch64",
+    "amd64",
+    "armhf",
+    "armv7",
+    "i386"
+  ],
+  "homeassistant_api": true,
+  "hassio_role": "default",
+  "options": {
+    "api_key": "",
+    "sync_interval_seconds": 5
+  },
+  "schema": {
+    "api_key": "str",
+    "sync_interval_seconds": "int(1,3600)"
+  },
+  "startup": "application",
+  "boot": "auto",
+  "map": [],
+  "ports": {},
+  "host_network": false
+}
