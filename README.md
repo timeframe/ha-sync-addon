@@ -14,7 +14,7 @@ A minimal Home Assistant addon that syncs `timeframe_*`, `weather.*`, and `media
 | Option | Description | Default |
 |--------|-------------|---------|
 | `api_key` | API key from your Timeframe profile page | *required* |
-| `sync_interval_seconds` | How often to sync entities (seconds) | `60` |
+| `sync_interval_seconds` | How often to sync entities (seconds) | `5` |
 
 ## How it works
 
