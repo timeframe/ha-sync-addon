@@ -1,8 +1,8 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
 set -e
 
-API_KEY="$(bashio::config 'api_key')"
-SYNC_INTERVAL="$(bashio::config 'sync_interval_seconds')"
+API_KEY="$(jq -r '.api_key' /data/options.json)"
+SYNC_INTERVAL="$(jq -r '.sync_interval_seconds' /data/options.json)"
 DEBOUNCE=60
 CLOUD_URL="https://www.timeframe.app/api/ha_sync"
 HA_TOKEN="${SUPERVISOR_TOKEN}"
@@ -10,11 +10,11 @@ HA_API="http://supervisor/core/api"
 ADDON_VERSION=$(jq -r '.version' /data/options.json 2>/dev/null || jq -r '.version' /config.json 2>/dev/null || echo "unknown")
 
 if [ -z "$API_KEY" ]; then
-  bashio::log.fatal "No API key configured. Generate one at https://www.timeframe.app/profile"
+  echo "[FATAL] No API key configured. Generate one at https://www.timeframe.app/profile"
   exit 1
 fi
 
-bashio::log.info "Timeframe HA Sync starting (poll: ${SYNC_INTERVAL}s, debounce: ${DEBOUNCE}s)"
+echo "[INFO] Timeframe HA Sync starting (poll: ${SYNC_INTERVAL}s, debounce: ${DEBOUNCE}s)"
 
 LAST_HASH=""
 LAST_SEND=0
@@ -26,7 +26,7 @@ while true; do
     -H "Authorization: Bearer ${HA_TOKEN}" \
     -H "Content-Type: application/json" \
     "${HA_API}/states" 2>&1) || {
-    bashio::log.warning "Failed to fetch HA states, retrying in ${SYNC_INTERVAL}s"
+    echo "[WARNING] Failed to fetch HA states, retrying in ${SYNC_INTERVAL}s"
     sleep "${SYNC_INTERVAL}"
     continue
   }
@@ -44,7 +44,7 @@ while true; do
   ENTITY_COUNT=$(echo "$PAYLOAD" | jq '.entities | length')
 
   if [ "$ENTITY_COUNT" -eq 0 ]; then
-    bashio::log.debug "No matching entities found, skipping sync"
+    echo "[DEBUG] No matching entities found, skipping sync"
     sleep "${SYNC_INTERVAL}"
     continue
   fi
@@ -67,12 +67,12 @@ while true; do
       "${CLOUD_URL}" 2>&1) || HTTP_CODE="000"
 
     if [ "$HTTP_CODE" = "200" ]; then
-      bashio::log.info "Synced ${ENTITY_COUNT} entities to Timeframe"
+      echo "[INFO] Synced ${ENTITY_COUNT} entities to Timeframe"
       LAST_HASH="$HASH"
       LAST_SEND="$NOW"
       DIRTY=false
     else
-      bashio::log.warning "Sync failed (HTTP ${HTTP_CODE}), will retry"
+      echo "[WARNING] Sync failed (HTTP ${HTTP_CODE}), will retry"
     fi
   fi
 
