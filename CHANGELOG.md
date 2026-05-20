@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.0] - 2026-05-20
+
+### Fixed
+- Use HA base image
+
 ## [1.4.0] - 2026-05-20
 
 ### Fixed
