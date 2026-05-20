@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.0] - 2026-05-19
+
+### Added
+- Include addon version in payload
+
 ## [1.2.0] - 2026-05-19
 
 ### Added

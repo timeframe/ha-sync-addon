@@ -32,8 +32,6 @@ You can create these optional `sensor` entities in Home Assistant (e.g. via temp
 | `sensor.timeframe_weather_entity_id` | Uses the first `weather.*` entity | Set the state to a specific weather entity ID (e.g. `weather.home`) to control which weather entity provides forecasts. |
 | `sensor.timeframe_weather_feels_like_entity_id` | Uses `apparent_temperature` from the weather entity | Set the state to a specific sensor entity ID to override the feels-like temperature display. |
 
-When any of these config sensors exist and their state is a valid entity ID, the referenced entity is automatically included in the sync payload.
-
 ## Resource usage
 
 This addon is designed to be extremely lightweight — it's a single shell script using `curl` and `jq` with no runtime dependencies.

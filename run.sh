@@ -7,6 +7,7 @@ DEBOUNCE=60
 CLOUD_URL="https://www.timeframe.app/api/ha_sync"
 HA_TOKEN="${SUPERVISOR_TOKEN}"
 HA_API="http://supervisor/core/api"
+ADDON_VERSION=$(jq -r '.version' /data/options.json 2>/dev/null || jq -r '.version' /config.json 2>/dev/null || echo "unknown")
 
 if [ -z "$API_KEY" ]; then
   bashio::log.fatal "No API key configured. Generate one at https://www.timeframe.app/profile"
@@ -31,10 +32,10 @@ while true; do
   }
 
   # Filter matching entities and resolve referenced entity IDs from config sensors
-  PAYLOAD=$(echo "$RESPONSE" | jq -c '
+  PAYLOAD=$(echo "$RESPONSE" | jq -c --arg v "$ADDON_VERSION" '
     . as $all |
     [$all[] | select(.entity_id | test("^sensor\\.timeframe_(media_player|weather|weather_feels_like)_entity_id$")) | .state | select(. != "" and . != "unknown" and . != "unavailable")] as $refs |
-    {entities: [$all[] | select(
+    {version: $v, entities: [$all[] | select(
       (.entity_id | (startswith("timeframe_") or startswith("weather.") or startswith("media_player.") or test("\\btimeframe_")))
       or (.entity_id as $eid | ($refs | any(. == $eid)))
     ) | {entity_id, state, attributes: .attributes, last_changed: .last_changed}]}
