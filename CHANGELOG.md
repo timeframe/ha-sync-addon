@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] - 2026-05-19
+
+### Added
+- Debounce API calls
+
 ## [1.1.0] - 2026-05-19
 
 ### Added

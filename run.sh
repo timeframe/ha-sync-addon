@@ -3,6 +3,7 @@ set -e
 
 API_KEY="$(bashio::config 'api_key')"
 SYNC_INTERVAL="$(bashio::config 'sync_interval_seconds')"
+DEBOUNCE=60
 CLOUD_URL="https://www.timeframe.app/api/ha_sync"
 HA_TOKEN="${SUPERVISOR_TOKEN}"
 HA_API="http://supervisor/core/api"
@@ -12,10 +13,14 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
-bashio::log.info "Timeframe HA Sync starting (interval: ${SYNC_INTERVAL}s)"
+bashio::log.info "Timeframe HA Sync starting (poll: ${SYNC_INTERVAL}s, debounce: ${DEBOUNCE}s)"
+
+LAST_HASH=""
+LAST_SEND=0
+DIRTY=false
 
 while true; do
-  # Fetch all entities from HA, filter to timeframe_*, weather.*, and media_player.*
+  # Fetch all entities from HA
   RESPONSE=$(curl -sf \
     -H "Authorization: Bearer ${HA_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -25,8 +30,15 @@ while true; do
     continue
   }
 
-  # Filter entities matching timeframe_*, weather.*, or media_player.* prefixes
-  PAYLOAD=$(echo "$RESPONSE" | jq -c '{entities: [.[] | select(.entity_id | (startswith("timeframe_") or startswith("weather.") or startswith("media_player."))) | {entity_id, state, attributes: .attributes, last_changed: .last_changed}]}')
+  # Filter matching entities and resolve referenced entity IDs from config sensors
+  PAYLOAD=$(echo "$RESPONSE" | jq -c '
+    . as $all |
+    [$all[] | select(.entity_id | test("^sensor\\.timeframe_(media_player|weather|weather_feels_like)_entity_id$")) | .state | select(. != "" and . != "unknown" and . != "unavailable")] as $refs |
+    {entities: [$all[] | select(
+      (.entity_id | (startswith("timeframe_") or startswith("weather.") or startswith("media_player.") or test("\\btimeframe_")))
+      or (.entity_id as $eid | ($refs | any(. == $eid)))
+    ) | {entity_id, state, attributes: .attributes, last_changed: .last_changed}]}
+  ')
 
   ENTITY_COUNT=$(echo "$PAYLOAD" | jq '.entities | length')
 
@@ -36,18 +48,31 @@ while true; do
     continue
   fi
 
-  # Send to Timeframe cloud
-  HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
-    -X POST \
-    -H "Authorization: Bearer ${API_KEY}" \
-    -H "Content-Type: application/json" \
-    -d "$PAYLOAD" \
-    "${CLOUD_URL}" 2>&1) || HTTP_CODE="000"
+  # Debounce: only send if data changed and cooldown has elapsed
+  HASH=$(echo "$PAYLOAD" | md5sum | cut -d' ' -f1)
+  NOW=$(date +%s)
+  ELAPSED=$(( NOW - LAST_SEND ))
 
-  if [ "$HTTP_CODE" = "200" ]; then
-    bashio::log.info "Synced ${ENTITY_COUNT} entities to Timeframe"
-  else
-    bashio::log.warning "Sync failed (HTTP ${HTTP_CODE}), retrying in ${SYNC_INTERVAL}s"
+  if [ "$HASH" != "$LAST_HASH" ]; then
+    DIRTY=true
+  fi
+
+  if [ "$DIRTY" = true ] && [ "$ELAPSED" -ge "$DEBOUNCE" ]; then
+    HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
+      -X POST \
+      -H "Authorization: Bearer ${API_KEY}" \
+      -H "Content-Type: application/json" \
+      -d "$PAYLOAD" \
+      "${CLOUD_URL}" 2>&1) || HTTP_CODE="000"
+
+    if [ "$HTTP_CODE" = "200" ]; then
+      bashio::log.info "Synced ${ENTITY_COUNT} entities to Timeframe"
+      LAST_HASH="$HASH"
+      LAST_SEND="$NOW"
+      DIRTY=false
+    else
+      bashio::log.warning "Sync failed (HTTP ${HTTP_CODE}), will retry"
+    fi
   fi
 
   sleep "${SYNC_INTERVAL}"
