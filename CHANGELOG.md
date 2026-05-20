@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.0] - 2026-05-20
+
+### Fixed
+- Fix command initiation
+
 ## [1.3.0] - 2026-05-19
 
 ### Added
