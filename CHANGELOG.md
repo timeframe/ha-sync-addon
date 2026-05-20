@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.0] - 2026-05-20
+
+### Fixed
+- Yet another docker fix
+
 ## [1.6.0] - 2026-05-20
 
 ### Fixed
