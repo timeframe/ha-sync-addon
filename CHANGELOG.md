@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.8.0] - 2026-05-24
+
+### Added
+- Improve logging
+
 ## [1.7.0] - 2026-05-20
 
 ### Fixed
