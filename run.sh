@@ -9,12 +9,22 @@ HA_TOKEN="${SUPERVISOR_TOKEN}"
 HA_API="http://supervisor/core/api"
 ADDON_VERSION=$(jq -r '.version' /data/options.json 2>/dev/null || jq -r '.version' /config.json 2>/dev/null || echo "unknown")
 
+timestamp() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+log() {
+  local level="$1"
+  shift
+  echo "[$(timestamp)] [${level}] $*"
+}
+
 if [ -z "$API_KEY" ]; then
-  echo "[FATAL] No API key configured. Generate one at https://www.timeframe.app/profile"
+  log FATAL "No API key configured. Generate one at https://www.timeframe.app/profile"
   exit 1
 fi
 
-echo "[INFO] Timeframe HA Sync starting (poll: ${SYNC_INTERVAL}s, debounce: ${DEBOUNCE}s)"
+log INFO "Timeframe HA Sync starting (poll: ${SYNC_INTERVAL}s, debounce: ${DEBOUNCE}s)"
 
 LAST_HASH=""
 LAST_SEND=0
@@ -26,7 +36,7 @@ while true; do
     -H "Authorization: Bearer ${HA_TOKEN}" \
     -H "Content-Type: application/json" \
     "${HA_API}/states" 2>&1) || {
-    echo "[WARNING] Failed to fetch HA states, retrying in ${SYNC_INTERVAL}s"
+    log WARNING "Failed to fetch HA states, retrying in ${SYNC_INTERVAL}s"
     sleep "${SYNC_INTERVAL}"
     continue
   }
@@ -44,7 +54,7 @@ while true; do
   ENTITY_COUNT=$(echo "$PAYLOAD" | jq '.entities | length')
 
   if [ "$ENTITY_COUNT" -eq 0 ]; then
-    echo "[DEBUG] No matching entities found, skipping sync"
+    log DEBUG "No matching entities found, skipping sync"
     sleep "${SYNC_INTERVAL}"
     continue
   fi
@@ -56,6 +66,8 @@ while true; do
 
   if [ "$HASH" != "$LAST_HASH" ]; then
     DIRTY=true
+  else
+    log INFO "No change detected for ${ENTITY_COUNT} entities; skipping sync"
   fi
 
   if [ "$DIRTY" = true ] && [ "$ELAPSED" -ge "$DEBOUNCE" ]; then
@@ -67,12 +79,12 @@ while true; do
       "${CLOUD_URL}" 2>&1) || HTTP_CODE="000"
 
     if [ "$HTTP_CODE" = "200" ]; then
-      echo "[INFO] Synced ${ENTITY_COUNT} entities to Timeframe"
+      log INFO "Synced ${ENTITY_COUNT} entities to Timeframe"
       LAST_HASH="$HASH"
       LAST_SEND="$NOW"
       DIRTY=false
     else
-      echo "[WARNING] Sync failed (HTTP ${HTTP_CODE}), will retry"
+      log WARNING "Sync failed (HTTP ${HTTP_CODE}), will retry"
     fi
   fi
 
