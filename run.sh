@@ -67,10 +67,15 @@ while true; do
   if [ "$HASH" != "$LAST_HASH" ]; then
     DIRTY=true
   else
-    log INFO "No change detected for ${ENTITY_COUNT} entities; skipping sync"
+    # Force sync if debounce period has elapsed, even without changes
+    if [ "$ELAPSED" -ge "$DEBOUNCE" ]; then
+      DIRTY=true
+    else
+      log INFO "No change detected for ${ENTITY_COUNT} entities; skipping sync"
+    fi
   fi
 
-  if [ "$DIRTY" = true ] && [ "$ELAPSED" -ge "$DEBOUNCE" ]; then
+  if [ "$DIRTY" = true ]; then
     HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
       -X POST \
       -H "Authorization: Bearer ${API_KEY}" \

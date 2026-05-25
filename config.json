@@ -1,6 +1,6 @@
 {
   "name": "Timeframe.app HA Sync",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "slug": "timeframe_ha_sync",
   "description": "Syncs Home Assistant entities to Timeframe.app cloud servce",
   "url": "https://github.com/timeframe/ha-sync-addon",

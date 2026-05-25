@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.0] - 2026-05-25
+
+### Fixed
+- Fix bug where sync did not work every second
+
 ## [1.8.0] - 2026-05-24
 
 ### Added
