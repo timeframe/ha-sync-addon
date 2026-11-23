@@ -42,3 +42,4 @@ This addon is designed to be extremely lightweight — it's a single shell scrip
 ## Development
 
 Run the sync regression tests with `mise exec -- bash test/sync_test.sh`.
+GitHub Actions runs shell syntax checks and the regression suite on pull requests and pushes to `main`.
