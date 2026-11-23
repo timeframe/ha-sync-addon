@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.0] - 2026-11-23
+
+### Added
+- Run shell syntax checks and sync regression tests in GitHub Actions.
+
+### Changed
+- Sync music, status labels, daily events, and feels-like temperature changes on the next poll without waiting for the background cooldown.
+- Keep a 60-second heartbeat for background updates and unchanged snapshots.
+
+### Fixed
+- Retry failed uploads with exponential backoff from 2 seconds up to 60 seconds.
+
 ## [1.9.0] - 2026-05-25
 
 ### Fixed
